@@ -1,0 +1,506 @@
+# Sveltia CMS configuration.
+#
+# This is what Luis sees when he visits /admin. Every field here maps to a
+# frontmatter key in src/content/blog/*.md, and those keys are validated again
+# at build time by src/content.config.ts — so a bad entry fails the build
+# rather than reaching the live site.
+
+backend:
+  name: github
+  repo: Daode9/Daode-Qigong-Website
+  branch: main
+  # Tiny Cloudflare Worker that completes the GitHub OAuth handshake.
+  # It only issues a token; it never sees or stores content.
+  base_url: https://daodeqigong-cms-auth.daodeqigong.workers.dev
+
+# Global default. Required even though the blog collection overrides it below
+# with entry-relative folders; Sveltia validates the top level regardless.
+media_folder: site/public/uploads
+public_folder: /uploads
+
+publish_mode: simple
+# Must match whatever is actually serving the site right now, or the editor's
+# preview links go nowhere.
+#   now        -> daodeqigong-preview.daodeqigong.workers.dev
+#   after the Pages Git connection -> daodeqigong.pages.dev
+#   at cutover -> daodeqigong.com
+site_url: https://daodeqigong-preview.daodeqigong.workers.dev
+display_url: https://daodeqigong-preview.daodeqigong.workers.dev
+logo_url: /images/brand/logo.png
+
+collections:
+  - name: blog
+    label: Blog Posts
+    label_singular: Blog Post
+    folder: site/src/content/blog
+    # One folder per post. Entry-relative media (both folders relative, not
+    # absolute) puts uploads in <slug>/images/ next to the Markdown, which is
+    # what lets Astro optimise them at build time instead of serving
+    # multi-megabyte originals the way Wix does.
+    path: '{{slug}}/index'
+    media_folder: images
+    public_folder: images
+    create: true
+    delete: true
+    slug: '{{slug}}' # produces /post/<slug>, matching the old Wix URLs
+    preview_path: post/{{slug}}
+    sortable_fields: [pubDate, title]
+    summary: '{{title}} — {{pubDate | date("D MMM YYYY")}}'
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: Shown as the headline and used in Google results.
+
+      - label: Short description
+        name: description
+        widget: text
+        required: false
+        hint: One or two sentences. Appears under the title in Google and on the blog page.
+
+      - label: Publish date
+        name: pubDate
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        picker_utc: true
+
+      - label: Cover image
+        name: cover
+        widget: image
+        required: false
+        hint: Appears behind the title on the blog page. Landscape works best.
+
+      - label: Reading time (minutes)
+        name: readTime
+        widget: number
+        required: false
+        value_type: int
+        min: 1
+
+      - label: Draft
+        name: draft
+        widget: boolean
+        required: false
+        default: false
+        hint: Tick to keep this hidden from the live site.
+
+      - label: Post
+        name: body
+        widget: markdown
+
+  # ---------------------------------------------------------------- videos
+  - name: testimonials
+    label: Video Testimonials
+    label_singular: Testimonial
+    folder: site/src/content/testimonials
+    path: '{{slug}}/index'
+    media_folder: images
+    public_folder: images
+    create: true
+    delete: true
+    slug: '{{name}}'
+    sortable_fields: [order, name]
+    summary: '{{name}} — {{quote}}'
+    fields:
+      - label: Student name
+        name: name
+        widget: string
+
+      - label: Short quote
+        name: quote
+        widget: text
+        hint: One sentence, shown under the video.
+
+      - label: YouTube link
+        name: videoUrl
+        widget: string
+        required: false
+        hint: >-
+          Paste the normal YouTube address, e.g.
+          https://www.youtube.com/watch?v=abc123. Leave blank and the card shows
+          "video coming soon".
+
+      - label: Cover image
+        name: cover
+        widget: image
+        required: false
+        hint: >-
+          Optional. Leave empty to use YouTube's own thumbnail. Upload one to
+          choose a better frame.
+
+      - label: Order
+        name: order
+        widget: number
+        required: false
+        value_type: int
+        hint: Lower numbers appear first.
+
+      - label: Hidden
+        name: draft
+        widget: boolean
+        required: false
+        default: false
+
+      - label: Longer description
+        name: body
+        widget: markdown
+        required: false
+
+  # -------------------------------------------------------- teaching pages
+  - name: teachings
+    label: Teaching Pages
+    label_singular: Teaching Page
+    folder: site/src/content/pages
+    path: '{{slug}}/index'
+    media_folder: images
+    public_folder: images
+    create: true
+    delete: true
+    slug: '{{slug}}'
+    preview_path: '{{slug}}'
+    sortable_fields: [order, title]
+    summary: '{{title}}'
+    fields:
+      - label: Title
+        name: title
+        widget: string
+
+      - label: Short description
+        name: description
+        widget: text
+        required: false
+        hint: Appears under the title, and in Google results.
+
+      - label: Header image
+        name: cover
+        widget: image
+        required: false
+
+      - label: Section
+        name: section
+        widget: select
+        options: [teachings, about]
+        default: teachings
+        hint: >-
+          "teachings" pages appear in the Our Teachings menu. "about" pages
+          (instructor, seminars) stand alone.
+
+      - label: Order
+        name: order
+        widget: number
+        required: false
+        value_type: int
+        hint: Controls the previous/next links between teaching pages.
+
+      - label: Show the event signup form
+        name: signupForm
+        widget: boolean
+        required: false
+        default: false
+        hint: >-
+          Adds the seminars and free events signup form to the bottom of the
+          page. Edit the event list under Site Content → Seminars & Events.
+
+      - label: Hidden
+        name: draft
+        widget: boolean
+        required: false
+        default: false
+
+      - label: Page content
+        name: body
+        widget: markdown
+
+  # -------------------------------------------------------------- classes
+  - name: classes
+    label: Class Pages
+    label_singular: Class Page
+    folder: site/src/content/classes
+    path: '{{slug}}/index'
+    media_folder: images
+    public_folder: images
+    create: true
+    delete: false
+    slug: '{{slug}}'
+    preview_path: '{{slug}}'
+    sortable_fields: [order, title]
+    summary: '{{title}}'
+    fields:
+      - { label: Title, name: title, widget: string }
+      - label: Short name
+        name: navLabel
+        widget: string
+        hint: Used in the menu, e.g. "Tai Chi".
+      - label: Icon
+        name: icon
+        widget: select
+        options: [yinyang, taichi, seated, cauldron]
+        required: false
+      - label: Short description
+        name: description
+        widget: text
+        required: false
+      - { label: Header image, name: banner, widget: image, required: false }
+      - label: Order
+        name: order
+        widget: number
+        required: false
+        value_type: int
+      - label: Heading above the reasons
+        name: featuresHeading
+        widget: string
+        required: false
+      - label: Reasons to join
+        name: features
+        widget: list
+        fields:
+          - label: Icon
+            name: icon
+            widget: select
+            options: [spark, check, seal, clock, layers, person, group, award]
+            required: false
+            hint: Ignored if you upload your own icon below.
+          - label: Your own icon
+            name: iconImage
+            widget: image
+            required: false
+            hint: >-
+              Optional. SVG or PNG, square, ideally on a transparent
+              background. Overrides the icon chosen above.
+          - { label: Title, name: title, widget: string }
+          - { label: Description, name: body, widget: text }
+      - label: Comparison panel
+        name: comparison
+        widget: object
+        required: false
+        collapsed: true
+        summary: '{{heading}}'
+        hint: >-
+          Optional two-column panel, shown underneath the reasons. Leave it out
+          and nothing is rendered.
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - label: Columns
+            name: sides
+            widget: list
+            summary: '{{label}}'
+            fields:
+              - { label: Name, name: label, widget: string }
+              - { label: Description, name: body, widget: text }
+              - label: Icon
+                name: iconImage
+                widget: image
+                required: false
+                hint: Square PNG or SVG on a transparent background.
+          - label: Closing line
+            name: footnote
+            widget: text
+            required: false
+            hint: Sits under both columns, above a rule.
+      - { label: Hidden, name: draft, widget: boolean, required: false, default: false }
+      - { label: Page content, name: body, widget: markdown }
+
+  # ---------------------------------------------------------- daoist texts
+  - name: texts
+    label: Daoist Texts
+    label_singular: Text
+    folder: site/src/content/texts
+    path: '{{slug}}/index'
+    create: false
+    delete: false
+    preview_path: '{{slug}}'
+    summary: '{{title}}'
+    fields:
+      - { label: Title, name: title, widget: string }
+      - { label: Translator, name: translator, widget: string, required: false }
+      - { label: Short description, name: description, widget: text, required: false }
+      - { label: Order, name: order, widget: number, required: false, value_type: int }
+      - { label: Chapter count, name: chapters, widget: number, required: false, value_type: int }
+      - { label: Hidden, name: draft, widget: boolean, required: false, default: false }
+      - label: The text
+        name: body
+        widget: markdown
+        hint: >-
+          Each chapter starts with a heading containing just its number. Keep
+          that format or the chapter links stop working.
+
+  # ------------------------------------------------------------- home page
+  - name: pages
+    label: Site Pages
+    files:
+      - name: schedule
+        label: Class Schedule
+        file: site/src/data/schedule.json
+        description: Weekly class times shown on the schedule page.
+        fields:
+          - { label: Intro paragraph, name: intro, widget: text }
+          - { label: Welcome paragraph, name: welcome, widget: text, required: false }
+          - { label: Timezone note, name: timezoneNote, widget: text }
+          - label: Classes
+            name: classes
+            widget: list
+            fields:
+              - { label: Class name, name: name, widget: string }
+              - { label: Link, name: href, widget: string }
+              - label: Weekly times
+                name: times
+                widget: list
+                field: { label: Time, name: time, widget: string }
+
+      - name: events
+        label: Seminars & Events
+        file: site/src/data/events.json
+        description: >-
+          The signup form on the Seminars and Free Events page. Leave the event
+          list empty between events and people can type in what they want to
+          join; add events here and they become tickboxes instead.
+        fields:
+          - { label: Form heading, name: heading, widget: string }
+          - { label: Intro line, name: lede, widget: text }
+          - { label: Spam folder note, name: spamNote, widget: text }
+          - label: Events
+            name: events
+            widget: list
+            required: false
+            summary: '{{label}}'
+            fields:
+              - label: Event
+                name: label
+                widget: string
+                hint: >-
+                  Include the name, price if any, and the date and time in
+                  Sydney time — e.g. "Organ Methods Qigong (Free) — Monday 11
+                  May, 6:30am–7:30am".
+
+      - name: home
+        label: Home Page
+        file: site/src/data/home.json
+        description: Every piece of text on the front page.
+        fields:
+          - label: Top of page
+            name: hero
+            widget: object
+            fields:
+              - { label: Small line above heading, name: eyebrow, widget: string }
+              - { label: Main heading, name: heading, widget: string }
+              - { label: Intro paragraph, name: lede, widget: text }
+              - { label: Green button text, name: primaryLabel, widget: string }
+              - { label: Green button link, name: primaryHref, widget: string }
+              - { label: Second button text, name: secondaryLabel, widget: string }
+              - { label: Second button link, name: secondaryHref, widget: string }
+
+          - label: Feature video
+            name: featureVideo
+            widget: object
+            fields:
+              - { label: Heading, name: heading, widget: string }
+              - { label: Description, name: blurb, widget: text }
+              - label: YouTube link
+                name: videoUrl
+                widget: string
+                required: false
+                hint: Paste the normal YouTube address.
+
+          - label: Featured quote
+            name: quote
+            widget: object
+            fields:
+              - { label: Quote, name: text, widget: text }
+              - { label: Who said it, name: cite, widget: string }
+
+          - { label: 'Heading: what we teach', name: classesHeading, widget: string }
+          - label: Practices
+            name: classes
+            widget: list
+            fields:
+              - label: Icon
+                name: icon
+                widget: select
+                options: [yinyang, taichi, seated, cauldron]
+                hint: Ignored if you upload your own icon below.
+              - label: Your own icon
+                name: iconImage
+                widget: image
+                required: false
+                hint: >-
+                  Optional. SVG or PNG, square, ideally on a transparent
+                  background. Overrides the icon chosen above.
+              - { label: Name, name: name, widget: string }
+              - { label: Description, name: blurb, widget: text }
+
+          - { label: 'Heading: reasons to join', name: reasonsHeading, widget: string }
+          - label: Reasons to join
+            name: reasons
+            widget: list
+            fields:
+              - label: Icon
+                name: icon
+                widget: select
+                options: [spark, check, seal, clock, layers, person, group, award]
+                hint: Ignored if you upload your own icon below.
+              - label: Your own icon
+                name: iconImage
+                widget: image
+                required: false
+                hint: >-
+                  Optional. SVG or PNG, square, ideally on a transparent
+                  background. Overrides the icon chosen above.
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: body, widget: text }
+
+          - { label: 'Heading: what we stand for', name: pillarsHeading, widget: string }
+          - label: Mission / Vision / Values
+            name: pillars
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Text, name: body, widget: text }
+
+          - { label: 'Heading: getting started', name: stepsHeading, widget: string }
+          - label: Steps
+            name: steps
+            widget: list
+            fields:
+              - { label: Number, name: number, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Text, name: body, widget: text }
+
+          - label: The practice cycle
+            name: cycle
+            widget: object
+            fields:
+              - { label: Heading, name: heading, widget: string }
+              - { label: Intro, name: blurb, widget: text }
+              - label: Steps
+                name: steps
+                widget: list
+                fields:
+                  - { label: Title, name: title, widget: string }
+                  - { label: Text, name: body, widget: text }
+
+          - label: Lao Zi quote
+            name: laozi
+            widget: object
+            fields:
+              - { label: Quote, name: text, widget: text }
+              - { label: Source, name: cite, widget: string }
+
+          - label: Our promise
+            name: promise
+            widget: object
+            fields:
+              - { label: Small line above heading, name: eyebrow, widget: string }
+              - { label: Heading, name: heading, widget: string }
+              - label: Text
+                name: body
+                widget: text
+                hint: Blank line starts a new paragraph. Wrap words in **stars** for bold.
+
+          - label: Get in touch
+            name: contact
+            widget: object
+            fields:
+              - { label: Heading, name: heading, widget: string }
+              - { label: Text, name: body, widget: text }
+              - { label: Button text, name: ctaLabel, widget: string }

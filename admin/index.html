@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Dao De Qigong — Content Editor</title>
+    <link rel="icon" href="/images/brand/logo.png" />
+  </head>
+  <body>
+    <!-- Sveltia CMS is a single script. Everything below runs in the browser
+         and commits directly to GitHub — there is no server to maintain. -->
+    <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js" type="module"></script>
+
+    <script>
+      /*
+       * Rebrand the editor for the site owner.
+       *
+       * Sveltia writes its own product name into the page title, the login
+       * heading and the welcome line. Luis should see his own site's name, not
+       * the name of the tool. These are plain DOM nodes, so we relabel them.
+       *
+       * A MutationObserver is needed because the CMS renders asynchronously and
+       * re-renders on navigation — a one-shot pass would be undone.
+       */
+      (function rebrand() {
+        const PRODUCT = 'Sveltia CMS';
+        const SITE = 'Dao De Qigong';
+        const TITLE = 'Dao De Qigong — Content Editor';
+
+        const relabel = () => {
+          if (document.title !== TITLE) document.title = TITLE;
+
+          document.querySelectorAll('h1').forEach((el) => {
+            if (el.textContent.trim() === PRODUCT) el.textContent = SITE;
+          });
+
+          // "Welcome to Sveltia CMS" — the product name sits in its own text
+          // node, so replace only that node and leave the markup alone.
+          document.querySelectorAll('div, p, span').forEach((el) => {
+            el.childNodes.forEach((node) => {
+              if (node.nodeType === Node.TEXT_NODE && node.textContent.includes(PRODUCT)) {
+                node.textContent = node.textContent.split(PRODUCT).join(SITE);
+              }
+            });
+          });
+        };
+
+        relabel();
+        new MutationObserver(relabel).observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+      })();
+    </script>
+  </body>
+</html>
